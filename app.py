@@ -1,11 +1,11 @@
-from flask import Flask, render_tempelate , request
+from flask import Flask, render_template , request
 
 app = Flask(__name__)
 
 
 @app.route("/")
 def myhome():
-    return render_tempelate("index.html")
+    return render_template("index.html")
 
 
 @app.route("/calculate", methods = ['POST'])
@@ -18,3 +18,9 @@ def mycalculate():
         message = "Not bad! Try saving a little more!"
     else :
         message = "Whao! Time to switch off some lights!"
+
+    return render_template("index.html" , units = units , bill = bill , message = message)
+
+if __name__ == "__main__":
+    app.run(debug = True)
+
