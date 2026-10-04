@@ -1,59 +1,51 @@
 from flask import Flask , render_template , request
-import requests
+
+import json
+import urllib.parse
+import urllib.request
 
 app = Flask(__name__)
 
-API_KEY = "a44ca95cf1c0aa07bf525ab38910af95"
+@app.route("/" , methods = ["GET" , "POST"])
 
-@app.route("/")
-def home():
-    return render_template("index.html")
+def details():
+    if request.method == "GET":
+        return render_template("index.html")
 
-@ app.route("/getweather" , methods = ["POST"])
-def get_weather():
-    city = request.form.get("city" , "").strip()
+    location = request.form.get("location" , "").strip()
 
-    if not city:
-        return render_template(
-            "index.html",
-            error = "Please enter a city name."
-        )
+    if not location:
+        return render_template("index.html" , error = "Give the correct location.")
 
     try:
-        url = (
-            f"https://api.openweathermap.org/data/2.5/weather"
-            f"?q={city}"
-            f"&appid = {API_KEY}"
-            f"&units = metrics"
-        )
+        q = urllib.parse.quote(location)
 
-        response = requests.get(url)
-        weather_data = response.json()
-        if weather_data.get("cod") !=200:
+        url = f"https://photon.komoot.io/api/?q={q}&limit=1"
 
+        req = urllib.request.Request(url , headers={"User-Agent": "FlaskGeocoder/1.0"})
 
-            return render_template(
-                "index.html",
-                error = "City not found."
-            )
+        source = urllib.request.urlopen(req).read()
+        responseData = json.loads(source)
 
+        features = responseData.get("features" , [])
+
+        if not features:
+            return render_template("index.html" , error = "Give me the location.")
+
+        lon , lat = features[0]["geometry"]["coordinates"]
 
         data = {
-                 "location": weather_data["name"],
-                 "country_code": weather_data["sys"]["country"],
-                 "temp": weather_data["main"]["temp"],
-                 "humidity": weather_data["main"]["humidity"],
-                 "description":weather_data["weather"][0]["description"]
-                }
+                "latitude": str(lat),
+                 "longitude": str(lon)
+               }  
 
-        return render_template(
-            "index.html",
-            data = data
-        )
+        return render_template("index.html" , data = data)
 
     except Exception:
-        return render_template(
-            "index.html",
-            error = "Something went wrong."
-        )
-        
+        return render_template("index.html" , error = "Give the correct location.")
+
+
+if __name__ == "__main__":
+    app.run(host = "0.0.0.0" , port = 8080 , debug = True)
+
+                                                        
